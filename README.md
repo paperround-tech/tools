@@ -58,7 +58,7 @@ When adding new tools:
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository-url> ppr-tools
+   git clone https://github.com/paperround-tech/tools.git ppr-tools
    cd ppr-tools
    ```
 
