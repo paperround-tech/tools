@@ -1,0 +1,80 @@
+# Secrets and Keys - NEVER commit these
+*.pem
+*.key
+*_key
+*_key_*
+bastion_key*
+id_rsa*
+id_ed25519*
+*.p12
+*.pfx
+*.crt
+*.csr
+
+# Configuration files that might contain secrets
+ssh_config
+known_hosts
+.env
+.env.*
+!.env.example
+config.json
+!config.example.json
+secrets.yml
+*.secrets
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.sublime-*
+
+# Log files
+*.log
+logs/
+
+# PID files
+*.pid
+pids/
+
+# Temporary files
+*.tmp
+*.bak
+.backup*
+temp/
+tmp/
+
+# Node.js (if we add any JS tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python (if we add any Python tools)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+.env/
+
+# Tool-specific ignores
+# Add tool-specific patterns below
