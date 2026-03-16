@@ -33,6 +33,28 @@ npx tsx query-db.ts "SELECT id, name FROM shops LIMIT 5"
 
 **Scripts**: `query-db.ts` (live config), `query-mercury.ts` (mercury config)
 
+### Agent Skills (`.agents/skills/`)
+Reusable AI agent skills for Warp. These are symlinked into `~/.agents/skills/` for global availability across all projects.
+
+**Current skills**: `ppr-live-db`, `aws-sso-manage`, `cli-environment`, `git-workflow`, `github-repo-setup`, `linear-integration`
+
+## Setup
+
+After cloning, run the setup script to configure your environment:
+
+```bash
+./scripts/setup.sh          # Full setup (skills + dependencies)
+./scripts/setup.sh skills   # Skills symlinks only
+./scripts/setup.sh deps     # Install tool dependencies only
+./scripts/setup.sh status   # Check current setup status
+```
+
+The setup script:
+- Symlinks all agent skills from `.agents/skills/` into `~/.agents/skills/`
+- Installs npm dependencies for Node.js tools (e.g. `hnddb-queries`)
+- Is idempotent — safe to re-run at any time
+- Backs up any existing local skill directories before replacing with symlinks
+
 ## Repository Structure
 
 ```
@@ -44,11 +66,17 @@ tools/
 │   ├── windows/                 # Windows scripts (PowerShell, Batch)
 │   ├── unix/                    # Unix scripts (Bash/Zsh)
 │   └── scripts/                 # Admin scripts
+├── .agents/skills/             # AI agent skills (symlinked globally)
+│   ├── ppr-live-db/
+│   ├── aws-sso-manage/
+│   └── ...
 ├── hnddb-queries/              # HNDDB MySQL query scripts
 │   ├── README.md
 │   ├── query-db.ts              # Live config queries
 │   ├── query-mercury.ts         # Mercury config queries
 │   └── package.json
+├── scripts/
+│   └── setup.sh                 # Environment setup script
 └── [future tools...]           # Additional tools will go here
 ```
 
