@@ -3,12 +3,12 @@
 # PPR Tools Setup Script
 #
 # Sets up the development environment for the PPR tools repo:
-# - Symlinks agent skills into ~/.agents/skills/ for global availability
+# - Copies agent skills into ~/.agents/skills/ for global availability
 # - Installs npm dependencies for Node.js-based tools
 #
 # Usage:
 #   ./scripts/setup.sh          # Full setup
-#   ./scripts/setup.sh skills   # Skills only
+#   ./scripts/setup.sh skills   # Skills only (re-run after pulling skill changes)
 #   ./scripts/setup.sh deps     # Dependencies only
 #   ./scripts/setup.sh status   # Show current setup status
 #
@@ -37,9 +37,9 @@ setup_skills() {
     # Ensure target directory exists
     mkdir -p "$SKILLS_TARGET"
 
-    local linked=0
-    local skipped=0
+    local installed=0
     local updated=0
+    local uptodate=0
 
     for skill_dir in "$SKILLS_SOURCE"/*/; do
         [ -d "$skill_dir" ] || continue
@@ -47,34 +47,31 @@ setup_skills() {
         local target="$SKILLS_TARGET/$skill_name"
 
         if [ -L "$target" ]; then
-            # Already a symlink — check if it points to the right place
-            local current=$(readlink -f "$target")
-            local expected=$(readlink -f "$skill_dir")
-            if [ "$current" = "$expected" ]; then
-                echo -e "  ${GREEN}✓${NC} $skill_name (already linked)"
-                skipped=$((skipped + 1))
+            # Remove stale symlink from previous setup approach
+            rm "$target"
+            cp -r "$skill_dir" "$target"
+            echo -e "  ${YELLOW}↻${NC} $skill_name (replaced symlink with copy)"
+            updated=$((updated + 1))
+        elif [ -d "$target" ]; then
+            # Check if content has changed
+            if diff -rq "$skill_dir" "$target" > /dev/null 2>&1; then
+                echo -e "  ${GREEN}✓${NC} $skill_name (up to date)"
+                uptodate=$((uptodate + 1))
             else
-                rm "$target"
-                ln -s "$skill_dir" "$target"
-                echo -e "  ${YELLOW}↻${NC} $skill_name (updated link)"
+                rm -rf "$target"
+                cp -r "$skill_dir" "$target"
+                echo -e "  ${YELLOW}↻${NC} $skill_name (updated)"
                 updated=$((updated + 1))
             fi
-        elif [ -d "$target" ]; then
-            # Existing directory (not a symlink) — back it up
-            local backup="${target}.backup.$(date +%Y%m%d%H%M%S)"
-            mv "$target" "$backup"
-            ln -s "$skill_dir" "$target"
-            echo -e "  ${YELLOW}↻${NC} $skill_name (existing dir backed up to $(basename $backup))"
-            updated=$((updated + 1))
         else
-            ln -s "$skill_dir" "$target"
-            echo -e "  ${GREEN}+${NC} $skill_name (linked)"
-            linked=$((linked + 1))
+            cp -r "$skill_dir" "$target"
+            echo -e "  ${GREEN}+${NC} $skill_name (installed)"
+            installed=$((installed + 1))
         fi
     done
 
     echo ""
-    echo -e "  Skills: ${GREEN}$linked linked${NC}, ${YELLOW}$updated updated${NC}, $skipped already OK"
+    echo -e "  Skills: ${GREEN}$installed installed${NC}, ${YELLOW}$updated updated${NC}, $uptodate up to date"
     echo ""
 }
 
@@ -110,16 +107,14 @@ show_status() {
         local skill_name=$(basename "$skill_dir")
         local target="$SKILLS_TARGET/$skill_name"
 
-        if [ -L "$target" ]; then
-            local current=$(readlink -f "$target")
-            local expected=$(readlink -f "$skill_dir")
-            if [ "$current" = "$expected" ]; then
-                echo -e "  ${GREEN}✓${NC} $skill_name → repo"
+        if [ -d "$target" ]; then
+            if diff -rq "$skill_dir" "$target" > /dev/null 2>&1; then
+                echo -e "  ${GREEN}✓${NC} $skill_name (up to date)"
+            elif [ -L "$target" ]; then
+                echo -e "  ${YELLOW}!${NC} $skill_name (stale symlink — re-run setup)"
             else
-                echo -e "  ${YELLOW}!${NC} $skill_name → $(readlink "$target") (stale link)"
+                echo -e "  ${YELLOW}!${NC} $skill_name (out of date — re-run setup)"
             fi
-        elif [ -d "$target" ]; then
-            echo -e "  ${RED}✗${NC} $skill_name (local dir, not linked)"
         else
             echo -e "  ${RED}✗${NC} $skill_name (not installed)"
         fi

@@ -11,10 +11,10 @@ cd ~/ws/ppr/tech/tools
 ```
 
 That's it. The setup script handles everything:
-- Symlinks all [agent skills](#agent-skills) into `~/.agents/skills/` for global availability
+- Copies all [agent skills](#agent-skills) into `~/.agents/skills/` for global availability
 - Installs npm dependencies for Node.js tools (e.g. `hnddb-queries`)
 - Is idempotent — safe to re-run after pulling new changes
-- Backs up any existing local skill directories before replacing with symlinks
+- Only updates skills that have actually changed (uses diff to check)
 
 Run `./scripts/setup.sh status` at any time to check your setup.
 
@@ -52,7 +52,7 @@ npx tsx hnddb-queries/query-db.ts "SELECT id, name FROM shops LIMIT 5"
 
 ## Agent Skills
 
-This repo is the source of truth for the team's [Warp agent skills](https://docs.warp.dev/agent-platform/capabilities/skills). Skills are stored in `.agents/skills/` and symlinked into `~/.agents/skills/` by the setup script, making them globally available in every project.
+This repo is the source of truth for the team's [Warp agent skills](https://docs.warp.dev/agent-platform/capabilities/skills). Skills are stored in `.agents/skills/` and copied into `~/.agents/skills/` by the setup script, making them globally available in every project.
 
 **Current skills:**
 
@@ -75,14 +75,14 @@ This repo is the source of truth for the team's [Warp agent skills](https://docs
 
 ### Maintaining skills
 
-After pulling changes that include skill updates, re-run setup to refresh symlinks:
+After pulling changes that include skill updates, re-run setup to refresh:
 
 ```bash
 git pull
 ./scripts/setup.sh skills
 ```
 
-Skills are already symlinked, so content changes take effect immediately. The re-run is only needed when new skills are added.
+The script uses `diff` to detect changes — only modified skills are re-copied. Run this after any `git pull` that touches `.agents/skills/`.
 
 ## Setup Script Reference
 
