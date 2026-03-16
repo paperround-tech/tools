@@ -22,6 +22,17 @@ portal-qa-tunnel
 
 **Environments**: QA (5433), UAT (5434), Staging (5435), Production (5436)
 
+### [HNDDB Queries](./hnddb-queries/)
+TypeScript query scripts for the PPR live replica MySQL database (`hnddb`). Fetches credentials from AWS SSM automatically.
+
+**Quick Start**:
+```bash
+cd hnddb-queries && npm install
+npx tsx query-db.ts "SELECT id, name FROM shops LIMIT 5"
+```
+
+**Scripts**: `query-db.ts` (live config), `query-mercury.ts` (mercury config)
+
 ## Repository Structure
 
 ```
@@ -33,6 +44,11 @@ tools/
 │   ├── windows/                 # Windows scripts (PowerShell, Batch)
 │   ├── unix/                    # Unix scripts (Bash/Zsh)
 │   └── scripts/                 # Admin scripts
+├── hnddb-queries/              # HNDDB MySQL query scripts
+│   ├── README.md
+│   ├── query-db.ts              # Live config queries
+│   ├── query-mercury.ts         # Mercury config queries
+│   └── package.json
 └── [future tools...]           # Additional tools will go here
 ```
 
