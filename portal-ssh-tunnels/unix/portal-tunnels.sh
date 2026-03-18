@@ -45,7 +45,7 @@ portal-uat-tunnel() {
     ssh -N \
         -L 5434:portal-uat-cluster.cluster-ctvaf9l5ench.eu-west-2.rds.amazonaws.com:5432 \
         -o ExitOnForwardFailure=yes \
-        ec2-user@18.175.239.214 \
+        ec2-user@13.135.249.248 \
         -i "$keyfile" &
     echo $! > ~/.ssh/portal-uat-tunnel.pid
     echo "UAT tunnel started on port 5434 (PID: $!)"
@@ -81,7 +81,7 @@ portal-tunnel-stop() {
     local port host
     case "$env" in
         qa)       port=5433; host="35.179.170.3" ;;
-        uat)      port=5434; host="18.175.239.214" ;;
+        uat)      port=5434; host="13.135.249.248" ;;
         staging)  port=5435; host="52.56.142.14" ;;
         production) port=5436; host="18.170.58.57" ;;
         *) echo "Invalid environment"; return 1 ;;
@@ -123,7 +123,7 @@ portal-tunnel-list() {
     echo "Running portal tunnels:"
     local port_map=(
         "qa:5433:35.179.170.3"
-        "uat:5434:18.175.239.214"
+        "uat:5434:13.135.249.248"
         "staging:5435:52.56.142.14"
         "production:5436:18.170.58.57"
     )
