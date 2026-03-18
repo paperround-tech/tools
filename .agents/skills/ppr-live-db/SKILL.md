@@ -1,6 +1,6 @@
 ---
 name: ppr-live-db
-description: Connect to and run queries against the PPR live replica MySQL database (hnddb). Use this skill when the user asks to query PPR live data, look up shops, agents, rounds, deliveries, or any production PPR data. Also covers the Mercury config variant.
+description: Connect to and run queries against the PPR live replica MySQL database (hnddb). Use this skill when the user asks to query PPR live data, look up shops, agents, rounds, deliveries, activity logs, or any production PPR data. Also covers the Mercury config variant.
 ---
 
 # PPR Live Replica Database
@@ -57,7 +57,10 @@ The data model documentation is split into domain-specific files in this skill d
 ### Available data model files
 
 - **`data-model-core.md`** — Core entities: shops, customers, publications, publicationprices, customerpublications, days lookup, delivery persons, agents, financial transactions, addresses, key relationships, common query patterns
-- **`data-model-rounds.md`** — Full rounds domain: round structure & config, membership & ordering, delivery person assignment (4 levels), payment configuration (paybands, frequencies, extras), actual deliveries (deliveryhistory → rounddeliveries → rounddeliverypublications), delivery app (deliverydrop with GPS), training rounds (lifecycle, completion, controls, rules), split rounds, charges, delivery frequency, contractor types
+- **`data-model-rounds.md`** — Full rounds domain: round structure & config, membership & ordering, delivery person assignment (intended vs actual, 5 layers), payment configuration (paybands, frequencies, extras), actual deliveries (deliveryhistory → rounddeliveries → rounddeliverypublications), delivery app (deliverydrop with GPS), training rounds (lifecycle, completion, controls, rules), split rounds, charges, delivery frequency, contractor types
+- **`data-model-delivery-persons.md`** — Delivery persons domain: core deliverypersons table (status/lifecycle, type, payment fields, delivery app link), contractortypes lookup, deliverypersongroups, all tables referencing deliverypersonid (round assignment, actual deliveries, payments, collections, route optimisation, training), common query patterns
+- **`data-model-activity-logs.md`** — Activity/logging domain: user login trail, delivery app logs, shop command logs, customer/shop/account audit trails, email logs, and common filtering patterns by user/date/entity
+- **`data-model-packing.md`** — Packing domain: pack site hierarchy (hubs/child sites, nested set), bundle config per publication/day, title sets, cages, supplier priorities, publication routing overrides, report sheet types (Bundles/Title Sets/Spares/Totals/Cages)
 
 To read a file, use its path relative to this skill: `~/.agents/skills/ppr-live-db/<filename>`
 
@@ -65,5 +68,9 @@ To read a file, use its path relative to this skill: `~/.agents/skills/ppr-live-
 
 - shops, customers, publications, addresses, transactions → `data-model-core.md`
 - rounds, deliveries, roundmembers, training, splits, paybands, chargebands, deliverydrop → `data-model-rounds.md`
-- deliverypersons, agents → `data-model-core.md`
+- deliverypersons, contractortypes, deliverypersongroups, deliverypersonpayments, deliverypersonpaymentextra, collectionbatch, odlroutesettings → `data-model-delivery-persons.md`
+- agents → `data-model-core.md`
+- roundpayments (intended delivery person), rounddeliveries (actual delivery person) → `data-model-rounds.md` and `data-model-delivery-persons.md`
 - deliveryhistory, rounddeliveries, rounddeliverypublications → `data-model-rounds.md`
+- activity logs, audit trails, login history, command logs, delivery drop logs → `data-model-activity-logs.md`
+- packingpacksites, packingcages, packingtitlesets, packingbundlelabels, packingsuppliers, bundle/title-set config → `data-model-packing.md`

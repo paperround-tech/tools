@@ -38,20 +38,44 @@
 
 ## Rounds — Delivery Person Assignment
 
-Four levels of assignment, from most permanent to most temporary:
+There are multiple layers that determine who **should** deliver a round on a given date (the "intended" person), and a separate record of who **actually** did it. Understanding both is essential for investigating discrepancies.
 
-**rounddeliverypersondays** — Which delivery person does which round on which day
+### Intended delivery person (who should deliver)
+
+Resolved in priority order — higher layers override lower ones:
+
+**Layer 1: `roundpayments`** — The contracted/paid delivery person for a date range. This is the **primary source of truth** for who is intended to deliver a round on any given date. Each row covers a `start_date`/`end_date` range. A `NULL` `deliverypersonid` means the round is VACANT for that period. Consecutive rows form a complete timeline of round ownership. This table also drives payroll — it links the person to a `paybandid` and `retainer` amount.
+- `id` (PK), `roundid`, `deliverypersonid`, `paybandid`
+- `paymentfrequencyid`, `retainer`, `start_date`/`end_date`
+- **Key insight:** `rounds.deliverypersonid` is a live "NOW" view — it only reflects the current delivery person, not historical assignments. It has no date context. For any historical or date-specific investigation, always use `roundpayments` which provides the full timeline with date ranges.
+
+**Layer 2: `rounddeliverypersondays`** — Per-day-of-week overrides (e.g. a different person does Sundays)
 - `id` (PK), `roundid`, `deliverypersonid`, `dayid`
 
-**rounddeliverypersonchanges** — Temporary delivery person changes (cover/substitution)
+**Layer 3: `rounddeliverypersonchanges`** — Temporary cover/substitution over a date range
 - `id` (PK), `roundid`, `existingpersonid`, `deliverypersonid`
 - `startdate`/`enddate`, `day1`..`day7` (per-day flags)
 
-**rounddeliverypersoncover** — One-off cover assignments for specific dates
+**Layer 4: `rounddeliverypersoncover`** — One-off cover assignments for specific dates
 - `rounddeliverypersoncoverid` (PK), `roundid`, `deliverydate`, `deliverypersonid`, `cover` (multiplier)
 
-**rounddeliverypersonoverrides** — Override delivery person for a specific date
+**Layer 5: `rounddeliverypersonoverrides`** — One-off overrides for specific dates
 - `id` (PK), `roundid`, `deliverydate`, `deliverypersonid`, `cover`
+
+### Actual delivery person (who did deliver)
+
+**`rounddeliveries.deliverypersonid`** — Records who actually performed the delivery run on a given date. This may differ from the intended person if cover was arranged informally or the intended person didn't show up.
+
+### Investigating intended vs actual discrepancies
+
+To compare intended vs actual for a round over a period:
+1. Query `roundpayments` for the date range to get the contracted person per day
+2. Check `rounddeliverypersondays`, `rounddeliverypersonchanges`, `rounddeliverypersoncover`, and `rounddeliverypersonoverrides` for any overrides
+3. Query `rounddeliveries` for the actual person per day
+4. Compare — mismatches indicate informal cover or data gaps
+
+**`roundpaymentdays`** — Per-day overrides within a round payment period
+- `id` (PK), `roundpaymentid`, `dayid`, `paybandid`, `deliverypersonid`, `retainer`
 
 ## Rounds — Payment Configuration
 
@@ -65,13 +89,6 @@ Four levels of assignment, from most permanent to most temporary:
 
 **paybandpublications** — Link specific publications to a payband
 - `id` (PK), `paybandid`, `publicationid`
-
-**roundpayments** — Payment config for a round
-- `id` (PK), `roundid`, `deliverypersonid`, `paybandid`
-- `paymentfrequencyid`, `retainer`, `start_date`/`end_date`
-
-**roundpaymentdays** — Per-day overrides for round payments
-- `id` (PK), `roundpaymentid`, `dayid`, `paybandid`, `deliverypersonid`, `retainer`
 
 **roundpaymentfrequencies** — How often delivery people are paid
 - 4=Weekly (1 week), 5=Four Weekly (4 weeks), 6=Monthly (1 month)
