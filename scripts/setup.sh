@@ -3,12 +3,12 @@
 # PPR Tools Setup Script
 #
 # Sets up the development environment for the PPR tools repo:
-# - Copies agent skills into ~/.agents/skills/ for global availability
+# - Symlinks agent skills into ~/.agents/skills/ for global availability
 # - Installs npm dependencies for Node.js-based tools
 #
 # Usage:
 #   ./scripts/setup.sh          # Full setup
-#   ./scripts/setup.sh skills   # Skills only (re-run after pulling skill changes)
+#   ./scripts/setup.sh skills   # Skills only (re-run once to set up symlinks)
 #   ./scripts/setup.sh deps     # Dependencies only
 #   ./scripts/setup.sh status   # Show current setup status
 #
@@ -45,27 +45,28 @@ setup_skills() {
         [ -d "$skill_dir" ] || continue
         local skill_name=$(basename "$skill_dir")
         local target="$SKILLS_TARGET/$skill_name"
+        local source_abs="$(cd "$skill_dir" && pwd)"
 
         if [ -L "$target" ]; then
-            # Remove stale symlink from previous setup approach
-            rm "$target"
-            cp -r "$skill_dir" "$target"
-            echo -e "  ${YELLOW}↻${NC} $skill_name (replaced symlink with copy)"
-            updated=$((updated + 1))
-        elif [ -d "$target" ]; then
-            # Check if content has changed
-            if diff -rq "$skill_dir" "$target" > /dev/null 2>&1; then
-                echo -e "  ${GREEN}✓${NC} $skill_name (up to date)"
+            local current_link=$(readlink -f "$target")
+            if [ "$current_link" = "$source_abs" ]; then
+                echo -e "  ${GREEN}✓${NC} $skill_name (symlinked)"
                 uptodate=$((uptodate + 1))
             else
-                rm -rf "$target"
-                cp -r "$skill_dir" "$target"
-                echo -e "  ${YELLOW}↻${NC} $skill_name (updated)"
+                rm "$target"
+                ln -s "$source_abs" "$target"
+                echo -e "  ${YELLOW}↻${NC} $skill_name (symlink updated)"
                 updated=$((updated + 1))
             fi
+        elif [ -d "$target" ]; then
+            # Replace old copy with symlink
+            rm -rf "$target"
+            ln -s "$source_abs" "$target"
+            echo -e "  ${YELLOW}↻${NC} $skill_name (replaced copy with symlink)"
+            updated=$((updated + 1))
         else
-            cp -r "$skill_dir" "$target"
-            echo -e "  ${GREEN}+${NC} $skill_name (installed)"
+            ln -s "$source_abs" "$target"
+            echo -e "  ${GREEN}+${NC} $skill_name (symlinked)"
             installed=$((installed + 1))
         fi
     done
@@ -106,15 +107,17 @@ show_status() {
         [ -d "$skill_dir" ] || continue
         local skill_name=$(basename "$skill_dir")
         local target="$SKILLS_TARGET/$skill_name"
+        local source_abs="$(cd "$skill_dir" && pwd)"
 
-        if [ -d "$target" ]; then
-            if diff -rq "$skill_dir" "$target" > /dev/null 2>&1; then
-                echo -e "  ${GREEN}✓${NC} $skill_name (up to date)"
-            elif [ -L "$target" ]; then
-                echo -e "  ${YELLOW}!${NC} $skill_name (stale symlink — re-run setup)"
+        if [ -L "$target" ]; then
+            local current_link=$(readlink -f "$target")
+            if [ "$current_link" = "$source_abs" ]; then
+                echo -e "  ${GREEN}✓${NC} $skill_name (symlinked)"
             else
-                echo -e "  ${YELLOW}!${NC} $skill_name (out of date — re-run setup)"
+                echo -e "  ${YELLOW}!${NC} $skill_name (symlink points elsewhere — re-run setup)"
             fi
+        elif [ -d "$target" ]; then
+            echo -e "  ${YELLOW}!${NC} $skill_name (copy, not symlinked — re-run setup)"
         else
             echo -e "  ${RED}✗${NC} $skill_name (not installed)"
         fi

@@ -14,17 +14,27 @@ The `linear` CLI (v1.7.0) is installed at `~/.deno/bin/linear`.
 
 ### 1. Create an issue
 ```
-linear issue create -t "Title" -d "Description" -a self --start
+linear issue create -t "Title" -d "Description" --team <TEAM>
 ```
-`--start` creates a branch and checks it out. Branch name follows `feature/<ticket>-<slug>`.
+Creates the issue and prints its URL (e.g. `DSY-125`).
 
-Useful flags: `-l <label>`, `--priority <1-4>`, `--estimate <points>`, `-p <parent-issue>`, `--team <TEAM>`.
+Useful flags: `-l <label>`, `--priority <1-4>`, `--estimate <points>`, `-p <parent-issue>`, `--team <TEAM>`, `-s <state>`.
 
-### 2. Start an existing issue
+**Important:** Do NOT use `--start` or `-a self` — the `--start` flag internally tries to resolve the assignee via `self` which fails in non-interactive/agent contexts. Instead, create the issue first, then start it separately (see step 2).
+
+### 2. Start an issue (create branch + set In Progress)
 ```
-linear issue start [issueId]
+linear issue start <issueId>
 ```
-Creates a feature branch and checks it out. Use `-f <ref>` to branch from a specific ref.
+Creates a feature branch, checks it out, and sets the issue to In Progress.
+Use `-f <ref>` to branch from a specific ref.
+
+**Two-step create-and-start pattern:**
+```
+linear issue create -t "Title" -d "Description" --team DSY
+# note the issue ID from the output URL (e.g. DSY-125)
+linear issue start DSY-125
+```
 
 ### 3. Create a PR
 ```
@@ -42,11 +52,11 @@ Creates a GitHub PR linked to the current branch's issue. Use `--draft` for work
 - `linear issue describe [id]` — get title + trailer for commit messages
 
 ## Conventions
-- Feature branches are created by Linear via `linear issue start` or `--start` — never manually.
+- Feature branches are created by Linear via `linear issue start` — never manually.
 - When committing, extract the ticket ID from the branch name and include it in the commit message.
 - Always include `Co-Authored-By: Oz <oz-agent@warp.dev>` in commits.
 
 ## Integration with Fixes
-1. If no Linear issue exists yet, offer to create one with `linear issue create --start`.
+1. If no Linear issue exists yet, create one with `linear issue create`, then `linear issue start <id>`.
 2. If on the wrong branch, use `linear issue start <id>` to switch.
 3. Stage, commit (with ticket ID), push, and offer to create a PR.

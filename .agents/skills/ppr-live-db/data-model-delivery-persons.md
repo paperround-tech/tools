@@ -25,8 +25,10 @@ The central record for anyone who delivers, collects, packs, trunks, or trains o
 - `nextpaymentdate` (datetime) — next scheduled payment date
 - `sendpayslipbyemail` (tinyint) — whether payslips are emailed
 - `newpay` (tinyint) — flag for new payment system
+- `newpayfrom` (date, nullable) — date from which a pre-existing agent becomes relevant for the new pay scheme
 - `badetails` (blob) — bank account details (encrypted/binary)
 - `exported` (tinyint) — whether payment data has been exported
+- `fueladvance` (tinyint, default 0) — whether the delivery person receives a fuel advance
 
 ### Delivery app
 - `del_app_userid` → users — links to the delivery app login account
@@ -34,7 +36,7 @@ The central record for anyone who delivers, collects, packs, trunks, or trains o
 ### Other
 - `created` (datetime) — record creation timestamp
 - `startdate` (datetime) — when the person started
-- 29 columns total
+- 31 columns total
 
 ## contractortypes — Role/type lookup
 Defines what kind of work a delivery person does. Both system-wide and shop-specific types exist.
