@@ -1,6 +1,29 @@
-# Adding Colleague to Portal Bastion Hosts - Step by Step
+# Adding a Colleague to Portal Database Access
 
-## Current Bastion Setup
+## Development Environment (SSM Relay — no SSH key needed)
+
+Development access uses an SSM relay instance (DSY-124). No SSH key exchange required.
+
+### Prerequisites for the colleague
+1. AWS CLI installed (`brew install awscli` / `winget install Amazon.AWSCLI`)
+2. AWS SSM plugin installed: https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html
+3. Added to the correct AWS SSO permission set (ask a team lead to add them)
+4. Active SSO session: `aws sso login`
+
+### Test it works
+```bash
+source /path/to/portal-ssh-tunnels/unix/portal-tunnels.sh
+portal-development-tunnel
+# Should print: "Development tunnel started on port 5437 via SSM relay..."
+```
+
+Credentials are fetched from SSM — see README for the command.
+
+---
+
+## QA / UAT / Staging / Production (SSH Bastion Hosts)
+
+### Current Bastion Setup
 
 Each bastion host currently has 2 authorized SSH keys:
 - **GitHub Actions** (for CI/CD)

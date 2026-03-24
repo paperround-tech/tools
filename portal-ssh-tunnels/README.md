@@ -1,6 +1,9 @@
 # Portal SSH Tunnels
 
-Cross-platform SSH tunnel scripts for connecting to Portal database environments via bastion hosts.
+Cross-platform SSH tunnel scripts for connecting to Portal database environments.
+
+- **Development** uses an SSM relay (no SSH key required — just AWS SSO)
+- **QA, UAT, Staging, Production** use SSH bastion hosts
 
 ## Quick Start
 
@@ -37,12 +40,13 @@ windows\portal-tunnels.bat stop qa
 
 ## Environment Details
 
-| Environment | Local Port | Bastion Host | RDS Cluster |
-|-------------|------------|--------------|-------------|
-| QA | 5433 | 35.179.170.3 | portal-qa-cluster |
-| UAT | 5434 | 18.175.239.214 | portal-uat-cluster |
-| Staging | 5435 | 52.56.142.14 | portal-staging-cluster |
-| Production | 5436 | 18.170.58.57 | portal-production-cluster |
+| Environment | Local Port | Access Method | Notes |
+|-------------|------------|---------------|-------|
+| Development | 5437 | SSM relay (DSY-124) | No SSH key — AWS SSO only |
+| QA | 5433 | SSH bastion 35.179.170.3 | |
+| UAT | 5434 | SSH bastion 18.175.239.214 | |
+| Staging | 5435 | SSH bastion 52.56.142.14 | |
+| Production | 5436 | SSH bastion 18.170.58.57 | |
 
 ## Repository Structure
 
@@ -64,15 +68,21 @@ portal-ssh-tunnels/
 ## Setup
 
 ### Prerequisites
+
+**Development (SSM relay)**
+1. AWS CLI installed and configured
+2. Active AWS SSO session: `aws sso login`
+3. IAM permissions to `ssm:StartSession` on the relay instance and `PortForward-portal-development` document
+
+**QA / UAT / Staging / Production (SSH bastion)**
 1. SSH client installed
 2. Bastion SSH keys in `~/.ssh/` (Unix) or `%USERPROFILE%\.ssh\` (Windows)
 3. Proper key permissions set
 
 ### First Time Setup
-1. **Get SSH keys** from team lead
-2. **Follow platform-specific setup** in `docs/WINDOWS_SETUP.md`
-3. **Test connection** to one bastion host
-4. **Run tunnel scripts**
+1. **Development**: ensure AWS SSO is configured — no SSH key needed
+2. **QA+**: get SSH keys from team lead, follow `docs/COLLEAGUE_SETUP_STEPS.md`
+3. **Test**: run `portal-tunnel-list` after sourcing the script
 
 ### Adding New Team Members
 See `docs/COLLEAGUE_SETUP_STEPS.md` for detailed instructions on:
@@ -84,17 +94,23 @@ See `docs/COLLEAGUE_SETUP_STEPS.md` for detailed instructions on:
 
 Once tunnels are running, connect to databases using:
 - **Host**: `localhost`
-- **Port**: Environment-specific (5433-5436)
-- **Username/Password**: Your database credentials
+- **Port**: Environment-specific (see table above)
+- **Username/Password**: Fetch from AWS SSM (never stored in files)
 
-Example connection strings:
-```
-# QA
-postgresql://username:password@localhost:5433/portal_qa
+```bash
+# Fetch credentials (example for development)
+DEV_USER=$(aws ssm get-parameter --region eu-west-2 \
+  --name /portal/development/database/main/username --with-decryption \
+  --query 'Parameter.Value' --output text)
+DEV_PASS=$(aws ssm get-parameter --region eu-west-2 \
+  --name /portal/development/database/main/password --with-decryption \
+  --query 'Parameter.Value' --output text)
 
-# Production  
-postgresql://username:password@localhost:5436/portal_production
+# Connect
+PGPASSWORD=$DEV_PASS psql -h localhost -p 5437 -U $DEV_USER -d portal_development
 ```
+
+SSM parameter paths follow the pattern: `/portal/{environment}/database/main/{username|password}`
 
 ## Security
 
