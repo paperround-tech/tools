@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Portal Database SSH Tunnels - Unix Shell Version
+# Development: 5437 (SSM relay, no SSH key needed)
 # QA: 5433, UAT: 5434, Staging: 5435, Production: 5436
 
 # Configuration - Change this to your SSH key base name
@@ -21,12 +22,31 @@ get_ssh_key_path() {
 }
 
 # Clear any existing aliases
-unalias portal-qa-tunnel portal-uat-tunnel portal-staging-tunnel portal-production-tunnel 2>/dev/null
+unalias portal-qa-tunnel portal-uat-tunnel portal-staging-tunnel portal-production-tunnel portal-development-tunnel 2>/dev/null
 
 # Start tunnel functions with background process tracking
 # Clean up any existing SSH control sockets
 cleanup_ssh_sockets() {
     rm -f ~/.ssh/*control* ~/.ssh/[0-9]* 2>/dev/null || true
+}
+
+# Development tunnel via SSM relay (DSY-124) — no SSH key or bastion IP required
+portal-development-tunnel() {
+    local relay_id
+    relay_id=$(aws ssm get-parameter --region eu-west-2 \
+        --name /infrastructure/development/ssm-relay/instance-id \
+        --query 'Parameter.Value' --output text 2>/dev/null)
+    if [ -z "$relay_id" ]; then
+        echo "ERROR: Could not find SSM relay at /infrastructure/development/ssm-relay/instance-id"
+        echo "Ensure DSY-124 networking stack is applied and aws sso login is active."
+        return 1
+    fi
+    aws ssm start-session \
+        --target "$relay_id" \
+        --document-name PortForward-portal-development \
+        --region eu-west-2 &
+    echo $! > ~/.ssh/portal-development-tunnel.pid
+    echo "Development tunnel started on port 5437 via SSM relay ${relay_id} (PID: $!)"
 }
 
 portal-qa-tunnel() {
@@ -80,20 +100,25 @@ portal-tunnel-stop() {
     # Map environment to port and host
     local port host
     case "$env" in
-        qa)       port=5433; host="35.179.170.3" ;;
-        uat)      port=5434; host="13.135.249.248" ;;
-        staging)  port=5435; host="52.56.142.14" ;;
-        production) port=5436; host="18.170.58.57" ;;
-        *) echo "Invalid environment"; return 1 ;;
+        development) port=5437; host="ssm" ;;
+        qa)          port=5433; host="35.179.170.3" ;;
+        uat)         port=5434; host="13.135.249.248" ;;
+        staging)     port=5435; host="52.56.142.14" ;;
+        production)  port=5436; host="18.170.58.57" ;;
+        *) echo "Invalid environment: $env"; return 1 ;;
     esac
     if [[ -f "$pidfile" ]]; then
         pid=$(cat "$pidfile")
-        # Find and kill SSH process using port and host
-        for ssh_pid in $(pgrep -f "ssh.*-L ${port}:.*${host}"); do
-            kill $ssh_pid 2>/dev/null || true
-        done
-        # Kill the parent process if it still exists
-        kill $pid 2>/dev/null || true
+        if [ "$host" = "ssm" ]; then
+            # SSM-based tunnel — kill by PID
+            kill $pid 2>/dev/null || true
+        else
+            # SSH-based tunnel — kill by port and host
+            for ssh_pid in $(pgrep -f "ssh.*-L ${port}:.*${host}"); do
+                kill $ssh_pid 2>/dev/null || true
+            done
+            kill $pid 2>/dev/null || true
+        fi
         rm "$pidfile"
         echo "${env} tunnel stopped"
     else
@@ -103,7 +128,7 @@ portal-tunnel-stop() {
 
 # Stop all tunnels
 portal-tunnel-stop-all() {
-    for env in qa uat staging production; do
+    for env in development qa uat staging production; do
         portal-tunnel-stop $env
     done
 }
@@ -111,6 +136,7 @@ portal-tunnel-stop-all() {
 # Start all tunnels
 portal-tunnel-start-all() {
     echo "Starting all portal tunnels..."
+    portal-development-tunnel
     portal-qa-tunnel
     portal-uat-tunnel
     portal-staging-tunnel
@@ -121,6 +147,18 @@ portal-tunnel-start-all() {
 # List running tunnels
 portal-tunnel-list() {
     echo "Running portal tunnels:"
+    # Development (SSM-based)
+    local dev_pidfile=~/.ssh/portal-development-tunnel.pid
+    if [[ -f "$dev_pidfile" ]]; then
+        local dev_pid; dev_pid=$(cat "$dev_pidfile")
+        if kill -0 "$dev_pid" 2>/dev/null; then
+            echo "development: running on port 5437 via SSM (PID: ${dev_pid})"
+        else
+            echo "development: process not found (stale PID file)"
+            rm "$dev_pidfile"
+        fi
+    fi
+    # SSH-based tunnels
     local port_map=(
         "qa:5433:35.179.170.3"
         "uat:5434:13.135.249.248"
@@ -134,7 +172,6 @@ portal-tunnel-list() {
         local pidfile=~/.ssh/portal-${env}-tunnel.pid
         if [[ -f "$pidfile" ]]; then
             pid=$(cat "$pidfile")
-            # Check for actual SSH process using port and host
             if pgrep -f "ssh.*-L ${port}:.*${host}" > /dev/null; then
                 local proc_pid=$(pgrep -f "ssh.*-L ${port}:.*${host}" | head -n1)
                 echo "${env}: running (PID: ${proc_pid})"
@@ -150,13 +187,14 @@ portal-tunnel-list() {
 portal-tunnel-help() {
     cat << EOF
 Portal SSH Tunnel Commands:
+    portal-development-tunnel - Start Development tunnel on port 5437 (SSM relay, no SSH key)
     portal-qa-tunnel          - Start QA tunnel on port 5433
     portal-uat-tunnel         - Start UAT tunnel on port 5434
     portal-staging-tunnel     - Start Staging tunnel on port 5435
     portal-production-tunnel  - Start Production tunnel on port 5436
-    
+
     portal-tunnel-start-all   - Start all tunnels
-    portal-tunnel-stop <env>  - Stop specific tunnel (qa/uat/staging/production)
+    portal-tunnel-stop <env>  - Stop specific tunnel (development/qa/uat/staging/production)
     portal-tunnel-stop-all    - Stop all tunnels
     portal-tunnel-list        - Show tunnel status
     portal-tunnel-help        - Show this help
