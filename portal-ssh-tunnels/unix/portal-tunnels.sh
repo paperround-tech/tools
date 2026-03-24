@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Portal Database SSH Tunnels - Unix Shell Version
-# Development: 5437 (SSM relay, no SSH key needed)
-# QA: 5433, UAT: 5434, Staging: 5435, Production: 5436
+# SSM relay ports (no SSH key needed): Dev=5437, QA=5438, UAT=5439, Staging=5440, Production=5441
+# SSH bastion ports:                   QA=5433,  UAT=5434, Staging=5435, Production=5436
 
 # Configuration - Change this to your SSH key base name
 SSH_KEY_BASE_NAME="bastion_key"  # Will use bastion_key_qa, bastion_key_uat, etc.
@@ -48,6 +48,26 @@ portal-development-tunnel() {
         --region eu-west-2 &
     echo $! > ~/.ssh/portal-development-tunnel.pid
     echo "Development tunnel started on port 5437 via SSM relay ${relay_id} (PID: $!)"
+}
+
+# UAT SSM tunnel (DSY-129) — no SSH key required, runs alongside existing portal-uat-tunnel
+portal-uat-ssm-tunnel() {
+    local relay_id
+    relay_id=$(aws ssm get-parameter --region eu-west-2 \
+        --name /infrastructure/uat/ssm-relay/instance-id \
+        --query 'Parameter.Value' --output text 2>/dev/null)
+    if [ -z "$relay_id" ]; then
+        echo "ERROR: Could not find SSM relay at /infrastructure/uat/ssm-relay/instance-id"
+        echo "Ensure DSY-129 networking stack is applied and aws sso login is active."
+        return 1
+    fi
+    aws ssm start-session \
+        --target "$relay_id" \
+        --document-name PortForward-portal-uat \
+        --parameters '{"localPortNumber":["5439"]}' \
+        --region eu-west-2 &
+    echo $! > ~/.ssh/portal-uat-ssm-tunnel.pid
+    echo "UAT SSM tunnel started on port 5439 via SSM relay ${relay_id} (PID: $!)"
 }
 
 portal-qa-tunnel() {
@@ -189,10 +209,11 @@ portal-tunnel-help() {
     cat << EOF
 Portal SSH Tunnel Commands:
     portal-development-tunnel - Start Development tunnel on port 5437 (SSM relay, no SSH key)
-    portal-qa-tunnel          - Start QA tunnel on port 5433
-    portal-uat-tunnel         - Start UAT tunnel on port 5434
-    portal-staging-tunnel     - Start Staging tunnel on port 5435
-    portal-production-tunnel  - Start Production tunnel on port 5436
+    portal-uat-ssm-tunnel     - Start UAT SSM tunnel on port 5439 (SSM relay, no SSH key)
+    portal-qa-tunnel          - Start QA tunnel on port 5433 (SSH bastion)
+    portal-uat-tunnel         - Start UAT tunnel on port 5434 (SSH bastion)
+    portal-staging-tunnel     - Start Staging tunnel on port 5435 (SSH bastion)
+    portal-production-tunnel  - Start Production tunnel on port 5436 (SSH bastion)
 
     portal-tunnel-start-all   - Start all tunnels
     portal-tunnel-stop <env>  - Stop specific tunnel (development/qa/uat/staging/production)

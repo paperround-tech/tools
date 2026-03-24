@@ -42,9 +42,11 @@ windows\portal-tunnels.bat stop qa
 
 | Environment | Local Port | Access Method | Notes |
 |-------------|------------|---------------|-------|
-| Development | 5437 | SSM relay (DSY-124) | No SSH key — AWS SSO only |
-| QA | 5433 | SSH bastion 35.179.170.3 | |
-| UAT | 5434 | SSH bastion 18.175.239.214 | |
+| Development | 5437 | SSM relay — `portal-development-tunnel` | No SSH key — AWS SSO only |
+| QA (SSM) | 5438 | SSM relay — future (DSY-129) | |
+| UAT (SSM) | 5439 | SSM relay — `portal-uat-ssm-tunnel` | No SSH key — AWS SSO only |
+| QA (SSH) | 5433 | SSH bastion 35.179.170.3 | |
+| UAT (SSH) | 5434 | SSH bastion 18.175.239.214 | Legacy — use SSM tunnel instead |
 | Staging | 5435 | SSH bastion 52.56.142.14 | |
 | Production | 5436 | SSH bastion 18.170.58.57 | |
 
