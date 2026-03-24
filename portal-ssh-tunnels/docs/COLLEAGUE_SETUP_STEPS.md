@@ -21,7 +21,28 @@ Credentials are fetched from SSM — see README for the command.
 
 ---
 
-## QA / UAT / Staging / Production (SSH Bastion Hosts)
+## UAT Environment (SSM Relay — no SSH key needed)
+
+UAT access uses an SSM relay instance (DSY-129). No SSH key exchange required.
+
+### Prerequisites for the colleague
+1. AWS CLI installed
+2. AWS SSM plugin installed: https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html
+3. Added to the correct AWS SSO permission set with access to `PortForward-portal-uat` document
+4. Active SSO session: `aws sso login`
+
+### Test it works
+```bash
+source /path/to/portal-ssh-tunnels/unix/portal-tunnels.sh
+portal-uat-ssm-tunnel
+# Should print: "UAT SSM tunnel started on port 5439 via SSM relay..."
+```
+
+Credentials: `/portal/uat/database/main/{username|password}` in SSM.
+
+---
+
+## QA / Staging / Production (SSH Bastion Hosts)
 
 ### Current Bastion Setup
 
