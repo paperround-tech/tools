@@ -44,6 +44,7 @@ portal-development-tunnel() {
     aws ssm start-session \
         --target "$relay_id" \
         --document-name PortForward-portal-development \
+        --parameters '{"localPortNumber":["5437"]}' \
         --region eu-west-2 &
     echo $! > ~/.ssh/portal-development-tunnel.pid
     echo "Development tunnel started on port 5437 via SSM relay ${relay_id} (PID: $!)"
