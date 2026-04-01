@@ -76,6 +76,34 @@ setup_skills() {
     echo ""
 }
 
+# ─── Shell Aliases ───────────────────────────────────────────────────────────
+
+setup_aliases() {
+    echo -e "${BLUE}═══ Shell Aliases Setup ═══${NC}"
+    echo ""
+
+    local aliases_file="$REPO_ROOT/shell/aliases.sh"
+    local source_line="source \"$aliases_file\""
+    local shell_rc="$HOME/.zshrc"
+
+    if [ ! -f "$aliases_file" ]; then
+        echo -e "  ${RED}✗${NC} shell/aliases.sh not found"
+        echo ""
+        return 1
+    fi
+
+    if grep -qF "$aliases_file" "$shell_rc" 2>/dev/null; then
+        echo -e "  ${GREEN}✓${NC} aliases already sourced in .zshrc"
+    else
+        echo "" >> "$shell_rc"
+        echo "# PPR Tools" >> "$shell_rc"
+        echo "$source_line" >> "$shell_rc"
+        echo -e "  ${GREEN}+${NC} added source line to .zshrc"
+    fi
+
+    echo ""
+}
+
 # ─── Dependencies Setup ─────────────────────────────────────────────────────
 
 setup_deps() {
@@ -136,6 +164,14 @@ show_status() {
         echo -e "  ${GREEN}✓${NC} portal-ssh-tunnels (available)"
     fi
 
+    if [ -f "$REPO_ROOT/openvpn/vpn.ts" ]; then
+        if [ -f "$REPO_ROOT/config.json" ]; then
+            echo -e "  ${GREEN}✓${NC} openvpn (configured)"
+        else
+            echo -e "  ${YELLOW}!${NC} openvpn (available but no config.json — copy config.example.json)"
+        fi
+    fi
+
     echo ""
 }
 
@@ -156,6 +192,7 @@ case "${1:-all}" in
         echo -e "Repo: $REPO_ROOT"
         echo ""
         setup_skills
+        setup_aliases
         setup_deps
         echo -e "${GREEN}Setup complete!${NC}"
         echo "Run './scripts/setup.sh status' to check setup at any time."

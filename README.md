@@ -11,10 +11,10 @@ cd ~/ws/ppr/tech/tools
 ```
 
 That's it. The setup script handles everything:
-- Copies all [agent skills](#agent-skills) into `~/.agents/skills/` for global availability
+- Symlinks all [agent skills](#agent-skills) into `~/.agents/skills/` for global availability
+- Adds a source line to `~/.zshrc` for [shell aliases](#shell-aliases) (`vpn`, `query-db`, tunnel commands, etc.)
 - Installs npm dependencies for Node.js tools (e.g. `hnddb-queries`)
 - Is idempotent — safe to re-run after pulling new changes
-- Only updates skills that have actually changed (uses diff to check)
 
 Run `./scripts/setup.sh status` at any time to check your setup.
 
@@ -26,29 +26,36 @@ Run `./scripts/setup.sh status` at any time to check your setup.
 
 ## Tools
 
-### [Portal SSH Tunnels](./portal-ssh-tunnels/)
-Cross-platform SSH tunnel scripts for connecting to Portal database environments via bastion hosts.
+### [OpenVPN](./openvpn/)
+CLI tool for managing PPR OpenVPN connections with automatic failover between profiles.
 
 ```bash
-# macOS/Linux
-source portal-ssh-tunnels/unix/portal-tunnels.sh
-portal-qa-tunnel
-
-# Windows PowerShell
-. .\portal-ssh-tunnels\windows\portal-tunnels.ps1
-portal-qa-tunnel
+vpn connect live
+vpn status
+vpn disconnect
 ```
 
-**Environments**: QA (5433), UAT (5434), Staging (5435), Production (5436). See [portal-ssh-tunnels/README.md](./portal-ssh-tunnels/README.md) for full docs.
+**Environments**: live (primary, backup, backup2), test (primary). Config is per-user via the `openvpn` section in `config.json` (gitignored). Passwords fetched from AWS SSM at runtime. See [openvpn/README.md](./openvpn/README.md) for full docs.
 
 ### [HNDDB Queries](./hnddb-queries/)
 TypeScript scripts for querying the PPR live replica MySQL database (`hnddb`). Credentials are fetched from AWS SSM automatically.
 
 ```bash
-npx tsx hnddb-queries/query-db.ts "SELECT id, name FROM shops LIMIT 5"
+query-db "SELECT id, name FROM shops LIMIT 5"
 ```
 
-**Scripts**: `query-db.ts` (live config, `/appconfig/live`), `query-mercury.ts` (mercury config, `/appconfig/mercury`). See [hnddb-queries/README.md](./hnddb-queries/README.md) for full docs.
+**Scripts**: `query-db` (live config, `/appconfig/live`), `query-mercury` (mercury config, `/appconfig/mercury`). See [hnddb-queries/README.md](./hnddb-queries/README.md) for full docs.
+
+### [Portal SSH Tunnels](./portal-ssh-tunnels/)
+Cross-platform SSH tunnel scripts for connecting to Portal database environments via bastion hosts.
+
+```bash
+portal-qa-tunnel
+portal-tunnel-list
+portal-tunnel-stop qa
+```
+
+**Environments**: QA (5433), UAT (5434), Staging (5435), Production (5436). See [portal-ssh-tunnels/README.md](./portal-ssh-tunnels/README.md) for full docs.
 
 ## Agent Skills
 
@@ -84,10 +91,26 @@ git pull
 
 The script uses `diff` to detect changes — only modified skills are re-copied. Run this after any `git pull` that touches `.agents/skills/`.
 
+## Shell Aliases
+
+The setup script adds a source line to `~/.zshrc` that loads aliases from `shell/aliases.sh`. After setup (or `source ~/.zshrc`), these are available globally:
+
+| Alias | Command |
+|-------|--------|
+| `vpn <cmd>` | OpenVPN tool (`connect`, `disconnect`, `status`, `list`) |
+| `query-db "SQL"` | Query PPR live replica (hnddb) |
+| `query-mercury "SQL"` | Query via mercury config |
+| `portal-qa-tunnel` | Start QA SSH tunnel (port 5433) |
+| `portal-tunnel-list` | Show running tunnels |
+| `zs` | Reload `~/.zshrc` |
+| `ta` | `tig --all` |
+
+Portal tunnel functions (`portal-*-tunnel`, `portal-tunnel-stop`, etc.) are also loaded automatically.
+
 ## Setup Script Reference
 
 ```bash
-./scripts/setup.sh          # Full setup (skills + dependencies)
+./scripts/setup.sh          # Full setup (skills + aliases + dependencies)
 ./scripts/setup.sh skills   # Symlink skills only
 ./scripts/setup.sh deps     # Install tool dependencies only
 ./scripts/setup.sh status   # Show current setup status
@@ -104,6 +127,13 @@ tools/
 │   ├── git-workflow/
 │   ├── github-repo-setup/
 │   └── linear-integration/
+├── config.json                 # Per-user tool config (gitignored)
+├── config.example.json         # Config template
+├── shell/
+│   └── aliases.sh              # Shell aliases (sourced from ~/.zshrc)
+├── openvpn/                    # OpenVPN CLI tool with auto-failover
+│   ├── README.md
+│   └── vpn.ts
 ├── hnddb-queries/              # HNDDB MySQL query scripts
 │   ├── README.md
 │   ├── query-db.ts

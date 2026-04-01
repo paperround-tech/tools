@@ -1,0 +1,23 @@
+{
+  "openvpn": {
+    "openvpn_bin": "/opt/homebrew/opt/openvpn/sbin/openvpn",
+    "connect_timeout": 15,
+    "ssm_password_path": "/openvpn/<your-username>",
+    "environments": {
+      "live": {
+        "profiles": [
+          { "name": "primary", "path": "/path/to/live.ovpn" },
+          { "name": "backup", "path": "/path/to/livebackup.ovpn" }
+        ]
+      },
+      "test": {
+        "profiles": [
+          { "name": "primary", "path": "/path/to/test.ovpn" }
+        ]
+      }
+    }
+  },
+  "portal_ssh_tunnels": {
+    "ssh_key_base_name": "bastion_key"
+  }
+}
