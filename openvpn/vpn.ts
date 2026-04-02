@@ -324,7 +324,7 @@ function isProcessRunning(pid: string): boolean {
 
 function findOrphanedProcess(): string | null {
   try {
-    const output = execSync("pgrep -f 'openvpn.*--daemon ppr-vpn'", { encoding: "utf-8" }).trim();
+    const output = execSync("pgrep -f '[o]penvpn.*--daemon ppr-vpn'", { encoding: "utf-8" }).trim();
     return output.split("\n")[0] || null;
   } catch {
     return null;
