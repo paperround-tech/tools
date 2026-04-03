@@ -9,13 +9,13 @@ description: >
 # FastMD
 
 ## Bootstrap (Run at the start of every conversation)
-Before responding to any task, search the FastMD Sandbox workspace for documents relevant
+Before responding to any task, search the FastMD KB workspace for documents relevant
 to the topic at hand. Read any that look useful and use them to inform your response — treat
 FastMD as a persistent knowledge base, not just a place to store things.
 
 ```
 Tool: search_files
-{ "query": "<topic keywords>", "workspace_id": "251bfc85-3f74-4e5a-bdba-3f7c3137b7f5" }
+{ "query": "<topic keywords>", "workspace_id": "0c8dbcfe-d5a0-475e-bf13-22c1275d77fa" }
 ```
 
 If the task touches multiple domains (e.g. a specific repo AND a DB operation), run multiple
@@ -30,53 +30,54 @@ FastMD is a collaborative markdown workspace available via MCP.
 Always use `call_mcp_tool` with `server_id: d75b8739-cdcc-45c4-b137-702c8b332470`.
 
 ## Workspaces
-| Name    | ID                                     | Role  |
-|---------|----------------------------------------|-------|
-| Sandbox | `e34f41ae-bf66-4cac-99c9-6cb48ea177de` | owner |
+| Name    | ID                                     | Role  | Notes              |
+|---------|----------------------------------------|-------|-----------------|
+| KB      | `0c8dbcfe-d5a0-475e-bf13-22c1275d77fa` | owner | **Primary KB — use this by default** |
+| Sandbox | `e34f41ae-bf66-4cac-99c9-6cb48ea177de` | owner | Playground only, not part of the KB |
 
-Use the Sandbox workspace unless told otherwise.
+Use the KB workspace unless told otherwise.
 
 ## Common Operations
 
 ### List files in a workspace
 ```json
-{ "workspace_id": "251bfc85-3f74-4e5a-bdba-3f7c3137b7f5" }
+{ "workspace_id": "0c8dbcfe-d5a0-475e-bf13-22c1275d77fa" }
 ```
 Tool: `list_files`
 
 ### Read a file
 ```json
-{ "workspace_id": "251bfc85-3f74-4e5a-bdba-3f7c3137b7f5", "file_id": "<file_id>" }
+{ "workspace_id": "0c8dbcfe-d5a0-475e-bf13-22c1275d77fa", "file_id": "<file_id>" }
 ```
 Tool: `read_file`
 
 ### Create a file
 ```json
-{ "workspace_id": "251bfc85-3f74-4e5a-bdba-3f7c3137b7f5", "path": "folder/filename.md", "content": "# Title\n..." }
+{ "workspace_id": "0c8dbcfe-d5a0-475e-bf13-22c1275d77fa", "path": "folder/filename.md", "content": "# Title\n..." }
 ```
 Tool: `create_file`
 
 ### Update a file
 ```json
-{ "workspace_id": "251bfc85-3f74-4e5a-bdba-3f7c3137b7f5", "file_id": "<file_id>", "content": "..." }
+{ "workspace_id": "0c8dbcfe-d5a0-475e-bf13-22c1275d77fa", "file_id": "<file_id>", "content": "..." }
 ```
 Tool: `update_file`
 
 ### Search across files
 ```json
-{ "query": "search term", "workspace_id": "251bfc85-3f74-4e5a-bdba-3f7c3137b7f5" }
+{ "query": "search term", "workspace_id": "0c8dbcfe-d5a0-475e-bf13-22c1275d77fa" }
 ```
 Tool: `search_files`
 
 ### Move / rename a file
 ```json
-{ "workspace_id": "251bfc85-3f74-4e5a-bdba-3f7c3137b7f5", "file_id": "<file_id>", "new_path": "new/path.md" }
+{ "workspace_id": "0c8dbcfe-d5a0-475e-bf13-22c1275d77fa", "file_id": "<file_id>", "new_path": "new/path.md" }
 ```
 Tool: `move_file`
 
 ### Delete a file
 ```json
-{ "workspace_id": "251bfc85-3f74-4e5a-bdba-3f7c3137b7f5", "file_id": "<file_id>" }
+{ "workspace_id": "0c8dbcfe-d5a0-475e-bf13-22c1275d77fa", "file_id": "<file_id>" }
 ```
 Tool: `delete_file`
 
