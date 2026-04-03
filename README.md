@@ -59,13 +59,16 @@ portal-tunnel-stop qa
 
 ## Agent Skills
 
-This repo is the source of truth for the team's [Warp agent skills](https://docs.warp.dev/agent-platform/capabilities/skills). Skills are stored in `.agents/skills/` and copied into `~/.agents/skills/` by the setup script, making them globally available in every project.
+This repo is the source of truth for the team's [Warp agent skills](https://docs.warp.dev/agent-platform/capabilities/skills). Skills are stored in `.agents/skills/` and symlinked into `~/.agents/skills/` by the setup script, making them globally available in every project.
 
 **Current skills:**
 
 | Skill | Purpose |
 |-------|--------|
+| `tools-setup` | Bootstrap: checks tools repo for upstream changes at conversation start, reminds user to pull + run setup if behind |
+| `fastmd` | FastMD MCP knowledge base — reading/writing markdown docs in the team KB |
 | `ppr-live-db` | Query the PPR live replica MySQL database. Includes data model reference docs for core tables, rounds, deliveries, training rounds, etc. |
+| `ppr-git-conventions` | PPR-specific git rules and conventions |
 | `aws-sso-manage` | Manage AWS SSO users, permission sets, and IAM migration |
 | `cli-environment` | CLI environment preferences and setup |
 | `git-workflow` | Git workflow conventions and branching strategy |
@@ -89,7 +92,7 @@ git pull
 ./scripts/setup.sh skills
 ```
 
-The script uses `diff` to detect changes — only modified skills are re-copied. Run this after any `git pull` that touches `.agents/skills/`.
+Skills are symlinked (not copied), so existing skills update automatically on `git pull`. Re-running `setup.sh skills` is only needed to pick up newly added skills.
 
 ## Shell Aliases
 
@@ -121,7 +124,10 @@ Portal tunnel functions (`portal-*-tunnel`, `portal-tunnel-stop`, etc.) are also
 ```
 tools/
 ├── .agents/skills/             # AI agent skills (symlinked globally)
+│   ├── tools-setup/            # Conversation bootstrap: tools repo freshness check
+│   ├── fastmd/                 # FastMD MCP knowledge base skill
 │   ├── ppr-live-db/            # PPR database skill + data model docs
+│   ├── ppr-git-conventions/    # PPR-specific git rules
 │   ├── aws-sso-manage/
 │   ├── cli-environment/
 │   ├── git-workflow/
