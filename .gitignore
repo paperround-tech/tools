@@ -78,3 +78,6 @@ env/
 
 # Tool-specific ignores
 # Add tool-specific patterns below
+
+# One-off fix scripts (contain sensitive IDs / operational data)
+hnddb-queries/fix-*.ts
