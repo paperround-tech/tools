@@ -137,16 +137,12 @@ async function connect(envName: string): Promise<void> {
     writeFileSync(LOG_FILE, "");
     writeFileSync(PID_FILE, "");
 
-    // Create auth FIFO — credentials pass through a pipe, never touch disk
-    const authFifo = `/tmp/vpn-auth-${Date.now()}`;
-    execSync(`mkfifo -m 600 "${authFifo}"`);
-
-    // Write credentials to FIFO in background (blocks until reader opens it)
-    const writer = spawn("sh", ["-c", `printf '%s\\n%s\\n' '${username.replace(/'/g, "'\\''")}' '${password.replace(/'/g, "'\\''")}' > "${authFifo}"`], {
-      stdio: "ignore",
-      detached: true,
-    });
-    writer.unref();
+    // Write credentials to a private temp file.
+    // A FIFO is not used here because openvpn --daemon reads auth-user-pass
+    // after forking, by which time the FIFO write end may already be closed.
+    const authFile = `/tmp/vpn-auth-${Date.now()}`;
+    execSync(`install -m 600 /dev/null "${authFile}"`);
+    writeFileSync(authFile, `${username}\n${password}\n`, { mode: 0o600 });
 
     // Start openvpn daemon
     let exitCode: number;
@@ -154,7 +150,7 @@ async function connect(envName: string): Promise<void> {
       execSync(
         `sudo "${openvpnBin}" ` +
         `--config "${profile.path}" ` +
-        `--auth-user-pass "${authFifo}" ` +
+        `--auth-user-pass "${authFile}" ` +
         `--auth-nocache ` +
         `--auth-retry none ` +
         `--connect-retry-max 1 ` +
@@ -169,8 +165,8 @@ async function connect(envName: string): Promise<void> {
       exitCode = 1;
     }
 
-    // Clean up FIFO
-    try { unlinkSync(authFifo); } catch {}
+    // Clean up auth file
+    try { unlinkSync(authFile); } catch {}
 
     if (exitCode !== 0) {
       console.log("  ✗ OpenVPN failed to start");
@@ -183,6 +179,17 @@ async function connect(envName: string): Promise<void> {
       try {
         const log = readFileSync(LOG_FILE, "utf-8");
         if (log.includes("Initialization Sequence Completed")) {
+          connected = true;
+          break;
+        }
+      } catch {}
+
+      // Fallback: check for an active TUN interface with an IP assigned.
+      // In WSL2, openvpn --daemon does not write to --log-append, so the log
+      // check above never fires. Detecting the tun interface is reliable there.
+      try {
+        const tunOut = execSync("ip addr show type tun 2>/dev/null", { encoding: "utf-8" });
+        if (tunOut.includes("inet ")) {
           connected = true;
           break;
         }
