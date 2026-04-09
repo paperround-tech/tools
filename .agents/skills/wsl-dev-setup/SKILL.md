@@ -123,8 +123,10 @@ Install all required CLI tools:
 ### apt packages
 
 ```bash
-sudo apt-get update && sudo apt-get install -y tig openvpn unzip
+sudo apt-get update && sudo apt-get install -y tig openvpn unzip wslu
 ```
+
+`wslu` enables WSL to open URLs in the Windows default browser — required for `aws sso login` and `gh auth login` to work correctly.
 
 ### GitHub CLI (`gh`)
 

@@ -103,6 +103,9 @@ setup_env() {
     add_export 'export GH_PAGER=""' 'GH_PAGER'
     add_export 'export AWS_PAGER=""' 'AWS_PAGER'
 
+    # Default AWS profile
+    add_export 'export AWS_PROFILE=paperround' 'AWS_PROFILE'
+
     echo ""
 }
 
