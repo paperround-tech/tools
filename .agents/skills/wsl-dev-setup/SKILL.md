@@ -123,10 +123,20 @@ Install all required CLI tools:
 ### apt packages
 
 ```bash
-sudo apt-get update && sudo apt-get install -y tig openvpn unzip wslu
+sudo apt-get update && sudo apt-get install -y tig openvpn unzip wslu postgresql-client
 ```
 
 `wslu` enables WSL to open URLs in the Windows default browser — required for `aws sso login` and `gh auth login` to work correctly.
+
+### AWS Session Manager plugin
+
+Required for SSM-based database tunnels (e.g. `portal-development-tunnel`):
+
+```bash
+curl -fsSL "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o /tmp/session-manager-plugin.deb
+sudo dpkg -i /tmp/session-manager-plugin.deb
+session-manager-plugin --version
+```
 
 ### GitHub CLI (`gh`)
 
@@ -207,6 +217,22 @@ sed -i 's/\r//' script.sh
 
 **SSH agent across sessions**: The snippet added in Step 1 ensures the key is loaded on every
 new terminal without spawning duplicate agents.
+
+## Portal Local Development
+
+The portal runs inside a **devcontainer** — not directly in WSL.
+
+1. Clone `portal-DB` and `portal` into `~/ws/ppr/tech/`
+2. Build and start the DB container:
+   ```bash
+   docker build -t db-image ~/ws/ppr/tech/portal-DB
+   docker network create my-network
+   docker run --name db-container --network my-network -d -p 5432:5432 db-image
+   ```
+3. Create `portal/.env` from `.env.example` — populate SSM values with the script in the tools repo,
+   add Azure credentials manually. Use `DB_HOST=db-container` (not `localhost`).
+4. Open `~/ws/ppr/tech/portal` in VS Code — it will prompt to reopen in devcontainer
+5. Migrations and seeding run from inside the devcontainer
 
 ## Setup Checklist
 
