@@ -4,11 +4,14 @@
 #
 # Sets up the development environment for the PPR tools repo:
 # - Symlinks agent skills into ~/.agents/skills/ for global availability
+# - Adds shell environment exports (GH_PAGER, AWS_PAGER) to ~/.zshrc
+# - Adds source line for shell aliases to ~/.zshrc
 # - Installs npm dependencies for Node.js-based tools
 #
 # Usage:
 #   ./scripts/setup.sh          # Full setup
-#   ./scripts/setup.sh skills   # Skills only (re-run once to set up symlinks)
+#   ./scripts/setup.sh skills   # Skills only
+#   ./scripts/setup.sh env      # Shell environment exports only
 #   ./scripts/setup.sh deps     # Dependencies only
 #   ./scripts/setup.sh status   # Show current setup status
 #
@@ -73,6 +76,33 @@ setup_skills() {
 
     echo ""
     echo -e "  Skills: ${GREEN}$installed installed${NC}, ${YELLOW}$updated updated${NC}, $uptodate up to date"
+    echo ""
+}
+
+# ─── Shell Environment ───────────────────────────────────────────────────────
+
+setup_env() {
+    echo -e "${BLUE}═══ Shell Environment Setup ═══${NC}"
+    echo ""
+
+    local shell_rc="$HOME/.zshrc"
+
+    # Idempotently add an export line to ~/.zshrc
+    add_export() {
+        local export_line="$1"
+        local marker="$2"
+        if grep -qF "$marker" "$shell_rc" 2>/dev/null; then
+            echo -e "  ${GREEN}✓${NC} $marker (already set)"
+        else
+            echo "$export_line" >> "$shell_rc"
+            echo -e "  ${GREEN}+${NC} $marker (added to .zshrc)"
+        fi
+    }
+
+    # Disable pagers for CLI tools (prevents broken pipe in non-interactive contexts)
+    add_export 'export GH_PAGER=""' 'GH_PAGER'
+    add_export 'export AWS_PAGER=""' 'AWS_PAGER'
+
     echo ""
 }
 
@@ -181,6 +211,9 @@ case "${1:-all}" in
     skills)
         setup_skills
         ;;
+    env)
+        setup_env
+        ;;
     deps)
         setup_deps
         ;;
@@ -192,6 +225,7 @@ case "${1:-all}" in
         echo -e "Repo: $REPO_ROOT"
         echo ""
         setup_skills
+        setup_env
         setup_aliases
         setup_deps
         echo -e "${GREEN}Setup complete!${NC}"

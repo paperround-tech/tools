@@ -74,6 +74,7 @@ This repo is the source of truth for the team's [Warp agent skills](https://docs
 | `git-workflow` | Git workflow conventions and branching strategy |
 | `github-repo-setup` | GitHub repository configuration and branch protection |
 | `linear-integration` | Linear issue tracking integration |
+| `wsl-dev-setup` | New machine bootstrap: full WSL dev environment setup for PPR engineers |
 
 ### Adding a new skill
 
@@ -128,6 +129,7 @@ tools/
 │   ├── fastmd/                 # FastMD MCP knowledge base skill
 │   ├── ppr-live-db/            # PPR database skill + data model docs
 │   ├── ppr-git-conventions/    # PPR-specific git rules
+│   ├── wsl-dev-setup/          # New machine setup for WSL
 │   ├── aws-sso-manage/
 │   ├── cli-environment/
 │   ├── git-workflow/
